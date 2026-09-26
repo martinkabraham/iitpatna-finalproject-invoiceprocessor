@@ -91,6 +91,8 @@ def test_health_endpoint():
 def test_home_page_has_processing_and_refresh_controls():
     response = TestClient(app).get("/")
     assert response.status_code == 200
+    assert 'href="/static/style.css"' in response.text
+    assert 'href="/static/actions.css"' in response.text
     assert 'id="processing-overlay"' in response.text
     assert "Refresh list" in response.text
     assert "Invoices processed by month" in response.text
