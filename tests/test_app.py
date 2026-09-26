@@ -101,7 +101,8 @@ def test_home_page_has_processing_and_refresh_controls():
     assert "Download India GST Report" in response.text
     assert "/samples/NirmalCoffee.pdf" in response.text
     assert "/samples/AmazonWebServices.pdf" not in response.text
-    assert "/samples/AzureInterior.pdf" not in response.text
+    assert "/samples/AzureInterior.pdf" in response.text
+    assert "/samples/FlipkartInvoice.pdf" not in response.text
 
 
 def test_sample_invoice_can_be_downloaded():
