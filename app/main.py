@@ -1,7 +1,9 @@
 from collections import Counter
+from datetime import date
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -10,13 +12,14 @@ from sqlalchemy.orm import Session
 from .config import BASE_DIR, settings
 from .database import Base, engine, get_db
 from .models import Invoice, LineItem
-from .schemas import InvoiceOut
+from .schemas import InvoiceOut, MonthlyGSTReportParams
 from .services import (
     extract_invoice,
     extract_text,
     generate_invoice_insights,
     generate_invoices_report,
     generate_invoices_summary,
+    generate_monthly_gst_csv,
     generate_purchase_recommendations,
     save_upload,
 )
@@ -91,6 +94,31 @@ def invoices_report_page(request: Request, db: Session = Depends(get_db)):
     except Exception as exc:
         context["portfolio_error"] = f"Could not generate report: {exc}"
     return templates.TemplateResponse(request, "index.html", context)
+
+
+@app.get("/invoices/gst-report")
+def download_monthly_gst_report(
+    period: Annotated[MonthlyGSTReportParams, Depends()],
+    db: Session = Depends(get_db),
+):
+    month_start = date(period.year, period.month, 1)
+    month_end = date(period.year + (period.month == 12), period.month % 12 + 1, 1)
+    invoices = db.scalars(
+        select(Invoice)
+        .where(
+            Invoice.currency == "INR",
+            Invoice.invoice_date >= month_start,
+            Invoice.invoice_date < month_end,
+        )
+        .order_by(Invoice.invoice_date, Invoice.invoice_number)
+    ).all()
+    content = "\ufeff" + generate_monthly_gst_csv(invoices, period.year, period.month)
+    filename = f"india-gst-report-{period.year:04d}-{period.month:02d}.csv"
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.post("/upload")

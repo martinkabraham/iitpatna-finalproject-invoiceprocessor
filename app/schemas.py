@@ -86,3 +86,10 @@ class InvoiceOut(BaseModel):
     processed_at: datetime
     items: list[LineItemOut]
     model_config = ConfigDict(from_attributes=True)
+
+
+class MonthlyGSTReportParams(BaseModel):
+    """Validated calendar period for an Indian GST purchase report."""
+
+    year: int = Field(ge=2000, le=2100)
+    month: int = Field(ge=1, le=12)

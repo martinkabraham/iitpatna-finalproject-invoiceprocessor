@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.schemas import InvoiceData
-from app.services import _invoices_context, parse_invoice_locally
+from app.services import _invoices_context, generate_monthly_gst_csv, parse_invoice_locally
 
 
 def test_local_invoice_parser():
@@ -98,6 +98,7 @@ def test_home_page_has_processing_and_refresh_controls():
     assert "Invoices processed by month" in response.text
     assert "Summarize Invoices" in response.text
     assert "Generate Report" in response.text
+    assert "Download India GST Report" in response.text
     assert "/samples/NirmalCoffee.pdf" in response.text
     assert "/samples/AmazonWebServices.pdf" not in response.text
     assert "/samples/AzureInterior.pdf" not in response.text
@@ -119,3 +120,30 @@ def test_ai_routes_reject_missing_invoice():
     client = TestClient(app)
     assert client.post("/invoices/999999/insights").status_code == 404
     assert client.post("/invoices/999999/recommendations").status_code == 404
+
+
+def test_monthly_gst_report_download():
+    response = TestClient(app).get("/invoices/gst-report?year=2026&month=8")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert 'filename="india-gst-report-2026-08.csv"' in response.headers["content-disposition"]
+    assert "India GST Purchase Register,2026-08" in response.text
+    assert "Taxable Value (INR)" in response.text
+
+
+def test_gst_csv_totals_invoices():
+    from datetime import date
+    from types import SimpleNamespace
+
+    invoice = SimpleNamespace(
+        invoice_date=date(2026, 8, 14),
+        invoice_number="GST-1",
+        vendor_name="Example India Ltd",
+        subtotal=Decimal("100.00"),
+        tax=Decimal("18.00"),
+        total=Decimal("118.00"),
+        source_filename="gst-1.pdf",
+    )
+    report = generate_monthly_gst_csv([invoice], 2026, 8)
+    assert "GST-1,Example India Ltd,100.00,18.00,118.00" in report
+    assert "TOTAL,,,100.00,18.00,118.00" in report

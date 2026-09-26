@@ -1,5 +1,7 @@
 import re
 import logging
+import csv
+import io
 from collections import Counter, defaultdict
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -15,6 +17,49 @@ from .schemas import InvoiceData, LineItemData
 
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".txt"}
 logger = logging.getLogger(__name__)
+
+
+def generate_monthly_gst_csv(invoices, year: int, month: int) -> str:
+    """Build an Excel-friendly GST purchase register from stored INR invoices."""
+    output = io.StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(["India GST Purchase Register", f"{year:04d}-{month:02d}"])
+    writer.writerow([])
+    writer.writerow([
+        "Invoice Date",
+        "Invoice Number",
+        "Supplier",
+        "Taxable Value (INR)",
+        "GST Amount (INR)",
+        "Invoice Total (INR)",
+        "Source File",
+    ])
+
+    taxable_total = Decimal("0")
+    gst_total = Decimal("0")
+    invoice_total = Decimal("0")
+    for invoice in invoices:
+        taxable_value = invoice.subtotal or Decimal("0")
+        gst_amount = invoice.tax or Decimal("0")
+        gross_value = invoice.total or Decimal("0")
+        taxable_total += taxable_value
+        gst_total += gst_amount
+        invoice_total += gross_value
+        writer.writerow([
+            invoice.invoice_date.isoformat() if invoice.invoice_date else "",
+            invoice.invoice_number,
+            invoice.vendor_name,
+            f"{taxable_value:.2f}",
+            f"{gst_amount:.2f}",
+            f"{gross_value:.2f}",
+            invoice.source_filename,
+        ])
+
+    writer.writerow([])
+    writer.writerow(["TOTAL", "", "", f"{taxable_total:.2f}", f"{gst_total:.2f}", f"{invoice_total:.2f}", ""])
+    writer.writerow([])
+    writer.writerow(["Note", "This report includes INR invoices dated in the selected month. Verify figures against source invoices before filing a GST return."])
+    return output.getvalue()
 
 
 async def save_upload(upload: UploadFile) -> Path:

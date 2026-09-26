@@ -24,11 +24,20 @@
     </div>{% else %}<div class="chart-empty">Process an invoice to begin tracking monthly activity.</div>{% endif %}
   </section>
   <section class="portfolio-assistant" id="portfolio-assistant">
-    <div class="portfolio-assistant-head"><span class="assistant-avatar">✦</span><div><strong>Processed Invoice Assistant</strong><p>Summarise your records or create a multi-invoice management report.</p></div></div>
+    <div class="portfolio-assistant-head"><span class="assistant-avatar">✦</span><div><strong>Processed Invoice Assistant</strong><p>Summarise records, create a management report, or export a monthly India GST purchase register.</p></div></div>
     <div class="portfolio-actions">
       <form class="portfolio-ai-form" action="/invoices/summary" method="post"><button type="submit" {% if not invoices %}disabled{% endif %}>✦ Summarize Invoices</button></form>
       <form class="portfolio-ai-form" action="/invoices/report" method="post"><button type="submit" {% if not invoices %}disabled{% endif %}>▤ Generate Report</button></form>
     </div>
+    <form class="gst-report-form" action="/invoices/gst-report" method="get">
+      <span class="gst-report-icon" aria-hidden="true">₹</span>
+      <span class="gst-report-copy"><strong>Monthly GST purchase register</strong><small>Exports processed INR invoices as CSV</small></span>
+      <label for="gst-period">Reporting month</label>
+      <input id="gst-period" type="month" required>
+      <input class="gst-year" name="year" type="hidden">
+      <input class="gst-month" name="month" type="hidden">
+      <button type="submit">Download India GST Report ↓</button>
+    </form>
     {% if portfolio_result %}<div class="portfolio-result" id="portfolio-result" tabindex="-1"><p class="eyebrow">AI ANALYSIS</p><h3>{{ portfolio_title }}</h3><div class="ai-copy">{{ portfolio_result }}</div></div>{% endif %}
     {% if portfolio_error %}<div class="ai-error" id="portfolio-result" role="alert" tabindex="-1">{{ portfolio_error }}</div>{% endif %}
   </section>
@@ -60,6 +69,17 @@
       document.querySelectorAll('.portfolio-ai-form button').forEach(function (button) { button.disabled = true; });
     });
   });
+  const gstForm = document.querySelector('.gst-report-form');
+  if (gstForm) {
+    const periodInput = gstForm.querySelector('#gst-period');
+    const today = new Date();
+    periodInput.value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    gstForm.addEventListener('submit', function () {
+      const parts = periodInput.value.split('-');
+      gstForm.querySelector('.gst-year').value = parts[0];
+      gstForm.querySelector('.gst-month').value = parts[1];
+    });
+  }
   const portfolioResult = document.getElementById('portfolio-result');
   if (portfolioResult) {
     window.requestAnimationFrame(function () {

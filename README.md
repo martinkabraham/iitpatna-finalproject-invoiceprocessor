@@ -10,6 +10,7 @@ A Python capstone project that uploads invoices, extracts structured data, store
 - Fall back to a local rule-based parser when an AI key is unavailable
 - Store invoice headers and line items in SQLite using SQLAlchemy
 - Browse processed invoices and detailed records with extracted currencies
+- Download monthly India GST purchase-register CSV reports for processed INR invoices
 - JSON API endpoints and interactive Swagger documentation
 
 ## Technology
