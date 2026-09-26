@@ -64,11 +64,13 @@ pytest
 
 ## Azure App Service
 
-For Linux App Service, configure `DATABASE_URL=sqlite:////home/data/invoice_reader.db` and `UPLOAD_DIR=/home/data/uploads` so SQLite and uploaded files use persistent `/home` storage. Use this startup command:
+For Linux App Service, configure `DATABASE_URL=sqlite:////home/data/invoice_reader.db` and `UPLOAD_DIR=/home/data/uploads` so SQLite and uploaded files use persistent `/home` storage. Set the App Service **Startup Command** to:
 
 ```bash
-gunicorn -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 app.main:app
+./startup.sh
 ```
+
+The script uses Azure's `PORT` and optional `WEB_CONCURRENCY` environment variables, defaulting to port `8000` and two workers.
 
 For a multi-instance production deployment, replace SQLite and local uploads with Azure Database for PostgreSQL and Blob Storage.
 
