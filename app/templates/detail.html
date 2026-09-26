@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.invoice_number }} · Invoice Intelligence{% endblock %}
+{% block content %}
+<section class="detail-head"><a href="/#invoice-upload-form">← Back to upload</a><div><p class="eyebrow">PROCESSED INVOICE</p><h1>{{ invoice.invoice_number }}</h1><p>{{ invoice.source_filename }} · {{ invoice.processed_at.strftime('%d %b %Y, %H:%M') }}</p></div><div class="detail-actions"><a class="secondary-link" href="/">All invoices</a><span class="badge">Processed</span><form action="/invoices/{{ invoice.id }}/delete" method="post" onsubmit="return confirm('Delete this processed invoice? This cannot be undone.')"><button class="delete-button" type="submit">Delete invoice</button></form></div></section>
+<section class="detail-grid">
+  <article class="panel"><h2>Invoice details</h2><dl><div><dt>Vendor</dt><dd>{{ invoice.vendor_name }}</dd></div><div><dt>Customer</dt><dd>{{ invoice.customer_name or '—' }}</dd></div><div><dt>Invoice date</dt><dd>{{ invoice.invoice_date or '—' }}</dd></div><div><dt>Due date</dt><dd>{{ invoice.due_date or '—' }}</dd></div><div><dt>Extracted currency</dt><dd>{{ invoice.currency }}</dd></div></dl></article>
+  <article class="panel totals"><h2>Summary</h2><p><span>Subtotal</span><strong>{{ invoice.currency }} {{ "{:,.2f}".format(invoice.subtotal) }}</strong></p><p><span>Tax</span><strong>{{ invoice.currency }} {{ "{:,.2f}".format(invoice.tax) }}</strong></p><p class="grand"><span>Total</span><strong>{{ invoice.currency }} {{ "{:,.2f}".format(invoice.total) }}</strong></p></article>
+</section>
+<section class="records"><h3>Line items</h3>{% if invoice.items %}<div class="table-wrap"><table><thead><tr><th>Description</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>{% for item in invoice.items %}<tr><td>{{ item.description }}</td><td>{{ item.quantity }}</td><td>{{ invoice.currency }} {{ "{:,.2f}".format(item.unit_price) }}</td><td><strong>{{ invoice.currency }} {{ "{:,.2f}".format(item.amount) }}</strong></td></tr>{% endfor %}</tbody></table></div>{% else %}<p>No line items were detected.</p>{% endif %}</section>
+{% endblock %}

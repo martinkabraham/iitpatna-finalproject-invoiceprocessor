@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div><p class="eyebrow">SMART DOCUMENT PROCESSING</p><h1>Turn invoices into<br><em>structured insight.</em></h1><p class="lede">Upload an invoice and extract validated supplier, date, total, and line-item data in seconds.</p>
+  <p>Project uses FastAPI · Pydantic · LangChain · SQLite</p>
+  </div>
+  <form class="upload" id="invoice-upload-form" action="/upload" method="post" enctype="multipart/form-data">
+    <label for="file"><span class="upload-icon">⇧</span><strong>Drop an invoice here</strong><small>PDF, PNG, JPG or TXT · maximum 10 MB</small></label>
+    <input id="file" name="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" required onchange="this.form.querySelector('button').disabled=false; this.previousElementSibling.querySelector('strong').textContent=this.files[0].name">
+    <button type="submit" disabled>Process invoice</button>
+    <div class="sample-downloads">
+      <span>Need a test invoice file?</span>
+      <a href="/samples/NirmalCoffee.pdf" download>Nirmal Coffee - sample</a>
+      <a href="/samples/FlipkartInvoice.pdf" download>Flipkart- sample</a>
+    </div>
+  </form>
+</section>
+<section class="dashboard">
+  <div class="section-heading"><div><p class="eyebrow">{{ count }} RECORD{% if count != 1 %}S{% endif %}</p><h2>Processed invoices</h2></div><button class="refresh-button" type="button" onclick="window.location.reload()" aria-label="Refresh invoice list">↻ Refresh list</button></div>
+  <section class="processing-chart" aria-labelledby="processing-chart-title">
+    <div class="chart-heading"><div><p class="eyebrow">PROCESSING ACTIVITY</p><h2 id="processing-chart-title">Invoices processed by month</h2></div><div class="year-totals" aria-label="Invoice totals by year">{% for year, total in year_counts %}<span><strong>{{ year }}</strong> {{ total }} invoice{% if total != 1 %}s{% endif %}</span>{% endfor %}</div></div>
+    {% if monthly_chart %}<div class="bar-chart" role="img" aria-label="Monthly processed invoice counts">
+      {% for month in monthly_chart %}<div class="bar-column" title="{{ month.label }}: {{ month.count }} invoice{% if month.count != 1 %}s{% endif %}"><span class="bar-count">{{ month.count }}</span><div class="bar-track"><div class="bar-fill" style="height: {{ month.height }}%"></div></div><span class="bar-label">{{ month.label }}</span></div>{% endfor %}
+    </div>{% else %}<div class="chart-empty">Process an invoice to begin tracking monthly activity.</div>{% endif %}
+  </section>
+  <section class="portfolio-assistant" id="portfolio-assistant">
+    <div class="portfolio-assistant-head"><span class="assistant-avatar">✦</span><div><strong>Processed Invoice Assistant</strong><p>Summarise your records or create a multi-invoice management report.</p></div></div>
+    <div class="portfolio-actions">
+      <form class="portfolio-ai-form" action="/invoices/summary" method="post"><button type="submit" {% if not invoices %}disabled{% endif %}>✦ Summarize Invoices</button></form>
+      <form class="portfolio-ai-form" action="/invoices/report" method="post"><button type="submit" {% if not invoices %}disabled{% endif %}>▤ Generate Report</button></form>
+    </div>
+    {% if portfolio_result %}<div class="portfolio-result" id="portfolio-result" tabindex="-1"><p class="eyebrow">AI ANALYSIS</p><h3>{{ portfolio_title }}</h3><div class="ai-copy">{{ portfolio_result }}</div></div>{% endif %}
+    {% if portfolio_error %}<div class="ai-error" id="portfolio-result" role="alert" tabindex="-1">{{ portfolio_error }}</div>{% endif %}
+  </section>
+  <div class="records"><h3>Recent invoices</h3>
+    {% if invoices %}<div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Vendor</th><th>Date</th><th>Currency</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for invoice in invoices %}<tr><td><strong>{{ invoice.invoice_number }}</strong><small>{{ invoice.source_filename }}</small></td><td>{{ invoice.vendor_name }}</td><td>{{ invoice.invoice_date or '—' }}</td><td><strong>{{ invoice.currency }}</strong></td><td>{{ invoice.currency }} {{ "{:,.2f}".format(invoice.total) }}</td><td><span class="badge">Processed</span></td><td><div class="row-actions"><a href="/invoices/{{ invoice.id }}">View →</a><form action="/invoices/{{ invoice.id }}/delete" method="post" onsubmit="return confirm('Delete this processed invoice? This cannot be undone.')"><button class="delete-button" type="submit">Delete</button></form></div></td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<div class="empty"><span>▤</span><h4>No invoices processed yet</h4><p>Your uploaded records will appear here.</p></div>{% endif %}
+  </div>
+</section>
+<div class="processing-overlay" id="processing-overlay" role="status" aria-live="polite" aria-hidden="true">
+  <div class="processing-card"><span class="spinner" aria-hidden="true"></span><h2>Processing invoice</h2><p>Reading the document and extracting structured data…</p></div>
+</div>
+<script>
+  document.getElementById('invoice-upload-form').addEventListener('submit', function () {
+    const overlay = document.getElementById('processing-overlay');
+    const button = this.querySelector('button[type="submit"]');
+    overlay.classList.add('is-visible');
+    overlay.setAttribute('aria-hidden', 'false');
+    button.disabled = true;
+    button.textContent = 'Processing…';
+  });
+  document.querySelectorAll('.portfolio-ai-form').forEach(function (form) {
+    form.addEventListener('submit', function () {
+      const overlay = document.getElementById('processing-overlay');
+      overlay.querySelector('h2').textContent = 'Generating AI analysis';
+      overlay.querySelector('p').textContent = 'Reviewing processed invoice records…';
+      overlay.classList.add('is-visible');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.querySelectorAll('.portfolio-ai-form button').forEach(function (button) { button.disabled = true; });
+    });
+  });
+  const portfolioResult = document.getElementById('portfolio-result');
+  if (portfolioResult) {
+    window.requestAnimationFrame(function () {
+      portfolioResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      portfolioResult.focus({ preventScroll: true });
+    });
+  }
+</script>
+{% endblock %}

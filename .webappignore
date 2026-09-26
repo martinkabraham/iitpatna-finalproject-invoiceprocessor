@@ -1,0 +1,11 @@
+.git/
+.idea/
+.venv/
+.env
+.pytest_cache/
+__pycache__/
+*.py[cod]
+invoice_reader.db
+uploads/
+tests/
+test.py

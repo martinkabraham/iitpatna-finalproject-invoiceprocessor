@@ -1,0 +1,1 @@
+"""Invoice Intelligence application."""
