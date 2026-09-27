@@ -25,6 +25,15 @@ Total: $55.00
     assert len(result.line_items) == 1
 
 
+def test_image_invoice_upload_is_rejected():
+    response = TestClient(app).post(
+        "/upload",
+        files={"file": ("invoice.png", b"not-an-image", "image/png")},
+    )
+    assert response.status_code == 400
+    assert "Upload a PDF or TXT file." in response.text
+
+
 def test_local_parser_detects_invoice_currency():
     result = parse_invoice_locally("Invoice Number: UK-1\nCurrency: GBP\nTotal: £120.00")
     assert result.currency == "GBP"

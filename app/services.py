@@ -15,7 +15,7 @@ from .config import settings
 from .schemas import InvoiceData, LineItemData
 
 
-ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".txt"}
+ALLOWED_EXTENSIONS = {".pdf", ".txt"}
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +65,7 @@ def generate_monthly_gst_csv(invoices, year: int, month: int) -> str:
 async def save_upload(upload: UploadFile) -> Path:
     suffix = Path(upload.filename or "invoice").suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
-        raise HTTPException(400, "Upload a PDF, PNG, JPG, JPEG, or TXT file.")
+        raise HTTPException(400, "Upload a PDF or TXT file.")
     content = await upload.read()
     if not content:
         raise HTTPException(400, "The uploaded file is empty.")
@@ -80,15 +80,13 @@ async def save_upload(upload: UploadFile) -> Path:
 
 def extract_text(path: Path) -> str:
     suffix = path.suffix.lower()
+    if suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, "Upload a PDF or TXT file.")
     try:
         if suffix == ".pdf":
             text = "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
-        elif suffix == ".txt":
-            text = path.read_text(encoding="utf-8", errors="replace")
         else:
-            import pytesseract
-            from PIL import Image
-            text = pytesseract.image_to_string(Image.open(path))
+            text = path.read_text(encoding="utf-8", errors="replace")
     except Exception as exc:
         raise HTTPException(422, f"Could not read this invoice: {exc}") from exc
     if not text.strip():
