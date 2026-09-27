@@ -5,6 +5,7 @@
   <p>Project uses FastAPI · Pydantic · LangChain · SQLite</p>
   </div>
   <form class="upload" id="invoice-upload-form" action="/upload" method="post" enctype="multipart/form-data">
+    {% if upload_error %}<div class="upload-error" id="upload-error" role="alert">{{ upload_error }}</div>{% endif %}
     <label for="file"><span class="upload-icon">⇧</span><strong>Drop an invoice here</strong><small>PDF, PNG, JPG or TXT · maximum 10 MB</small></label>
     <input id="file" name="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" required onchange="this.form.querySelector('button').disabled=false; this.previousElementSibling.querySelector('strong').textContent=this.files[0].name">
     <button type="submit" disabled>Process invoice</button>

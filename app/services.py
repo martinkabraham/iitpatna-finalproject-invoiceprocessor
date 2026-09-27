@@ -96,6 +96,29 @@ def extract_text(path: Path) -> str:
     return text[:50000]
 
 
+def validate_invoice_document(text: str) -> None:
+    """Reject readable files that do not contain credible invoice content."""
+    normalized = re.sub(r"\s+", " ", text).strip()
+    has_invoice_label = bool(re.search(r"\b(?:tax\s+|commercial\s+|pro\s*forma\s+)?invoice\b", normalized, re.IGNORECASE))
+    has_amount_summary = bool(
+        re.search(
+            r"\b(?:grand\s+total|total(?:\s+(?:due|amount|for\s+this\s+invoice))?|amount\s+due|balance\s+due|subtotal)\b",
+            normalized,
+            re.IGNORECASE,
+        )
+    )
+    evidence = (
+        bool(re.search(r"\binvoice\s*(?:number|no\.?|#)\s*[:#-]?\s*[A-Z0-9]", normalized, re.IGNORECASE)),
+        bool(re.search(r"\b(?:bill\s+to|sold\s+to|vendor|supplier|seller)\b", normalized, re.IGNORECASE)),
+        bool(re.search(r"\b(?:invoice\s+date|due\s+date|tax|vat|gst)\b", normalized, re.IGNORECASE)),
+    )
+    if not has_invoice_label or not has_amount_summary or not any(evidence):
+        raise HTTPException(
+            status_code=422,
+            detail="This document does not appear to be a valid invoice. Please upload an invoice containing identifiable billing and total information.",
+        )
+
+
 def _money(value: str | None) -> Decimal:
     if not value:
         return Decimal("0")

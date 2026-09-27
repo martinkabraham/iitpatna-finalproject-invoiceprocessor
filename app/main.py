@@ -22,6 +22,7 @@ from .services import (
     generate_monthly_gst_csv,
     generate_purchase_recommendations,
     save_upload,
+    validate_invoice_document,
 )
 
 
@@ -122,13 +123,22 @@ def download_monthly_gst_report(
 
 
 @app.post("/upload")
-async def upload_page(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    path = await save_upload(file)
+async def upload_page(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    path = None
     try:
+        path = await save_upload(file)
         text = extract_text(path)
+        validate_invoice_document(text)
         invoice = store_invoice(db, extract_invoice(text), file.filename or path.name, text)
+    except HTTPException as exc:
+        if path is not None:
+            path.unlink(missing_ok=True)
+        context = invoice_list_data(db)
+        context["upload_error"] = exc.detail
+        return templates.TemplateResponse(request, "index.html", context, status_code=exc.status_code)
     except Exception:
-        path.unlink(missing_ok=True)
+        if path is not None:
+            path.unlink(missing_ok=True)
         raise
     return RedirectResponse(f"/invoices/{invoice.id}", status_code=303)
 
@@ -187,6 +197,7 @@ async def upload_api(file: UploadFile = File(...), db: Session = Depends(get_db)
     path = await save_upload(file)
     try:
         text = extract_text(path)
+        validate_invoice_document(text)
         return store_invoice(db, extract_invoice(text), file.filename or path.name, text)
     except Exception:
         path.unlink(missing_ok=True)

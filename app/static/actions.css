@@ -187,6 +187,15 @@
   scroll-margin-top: 24px;
 }
 
+.upload-error {
+  background: #fff0f0;
+  border: 1px solid #e6bcbc;
+  border-radius: 10px;
+  color: #721f1f;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+}
+
 @media (max-width: 760px) {
   .ai-tools,
   .ai-tool-actions {
