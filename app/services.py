@@ -100,6 +100,9 @@ def validate_invoice_document(text: str) -> None:
     """Reject readable files that do not contain credible invoice content."""
     normalized = re.sub(r"\s+", " ", text).strip()
     has_invoice_label = bool(re.search(r"\b(?:tax\s+|commercial\s+|pro\s*forma\s+)?invoice\b", normalized, re.IGNORECASE))
+    has_purchase_receipt_label = bool(
+        re.search(r"\b(?:receipt|order\s*(?:number|no\.?|#)\s*[:#-]?\s*[A-Z0-9])", normalized, re.IGNORECASE)
+    )
     has_amount_summary = bool(
         re.search(
             r"\b(?:grand\s+total|total(?:\s+(?:due|amount|for\s+this\s+invoice))?|amount\s+due|balance\s+due|subtotal)\b",
@@ -108,14 +111,14 @@ def validate_invoice_document(text: str) -> None:
         )
     )
     evidence = (
-        bool(re.search(r"\binvoice\s*(?:number|no\.?|#)\s*[:#-]?\s*[A-Z0-9]", normalized, re.IGNORECASE)),
-        bool(re.search(r"\b(?:bill\s+to|sold\s+to|vendor|supplier|seller)\b", normalized, re.IGNORECASE)),
+        bool(re.search(r"\b(?:invoice|order)\s*(?:number|no\.?|#)\s*[:#-]?\s*[A-Z0-9]", normalized, re.IGNORECASE)),
+        bool(re.search(r"\b(?:bill(?:ing|\s+to)|sold\s+to|vendor|supplier|seller)\b", normalized, re.IGNORECASE)),
         bool(re.search(r"\b(?:invoice\s+date|due\s+date|tax|vat|gst)\b", normalized, re.IGNORECASE)),
     )
-    if not has_invoice_label or not has_amount_summary or not any(evidence):
+    if not (has_invoice_label or has_purchase_receipt_label) or not has_amount_summary or sum(evidence) < 2:
         raise HTTPException(
             status_code=422,
-            detail="This document does not appear to be a valid invoice. Please upload an invoice containing identifiable billing and total information.",
+            detail="This document does not appear to be a valid invoice or purchase receipt. Please upload a document containing identifiable billing and total information.",
         )
 
 

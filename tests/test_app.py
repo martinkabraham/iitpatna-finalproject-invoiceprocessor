@@ -37,6 +37,12 @@ def test_invoice_document_is_accepted():
     validate_invoice_document("ACME Ltd\nINVOICE\nInvoice Number: INV-12\nInvoice Date: 2026-09-01\nTotal Amount Due: $42.00")
 
 
+def test_order_receipt_document_is_accepted():
+    validate_invoice_document(
+        "Nirmal Coffee\nOrder# NC-12\nBilling Information\nDate: 2026-09-01\nTax: 2.00\nOrder total 42.00"
+    )
+
+
 def test_browser_upload_displays_non_invoice_error():
     response = TestClient(app).post(
         "/upload",
