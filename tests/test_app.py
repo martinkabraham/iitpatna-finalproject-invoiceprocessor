@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.schemas import InvoiceData
-from app.services import _invoices_context, generate_monthly_gst_csv, parse_invoice_locally, validate_invoice_document
+from app.services import _invoices_context, generate_monthly_gst_csv, parse_invoice_locally
 
 
 def test_local_invoice_parser():
@@ -23,34 +23,6 @@ Total: $55.00
     assert result.vendor_name == "ACME Supplies"
     assert result.total == Decimal("55.00")
     assert len(result.line_items) == 1
-
-
-def test_non_invoice_document_is_rejected():
-    import pytest
-    from fastapi import HTTPException
-
-    with pytest.raises(HTTPException, match="does not appear to be a valid invoice"):
-        validate_invoice_document("Quarterly project meeting notes\nAttendees: Alice and Bob\nNext meeting: Friday")
-
-
-def test_invoice_document_is_accepted():
-    validate_invoice_document("ACME Ltd\nINVOICE\nInvoice Number: INV-12\nInvoice Date: 2026-09-01\nTotal Amount Due: $42.00")
-
-
-def test_order_receipt_document_is_accepted():
-    validate_invoice_document(
-        "Nirmal Coffee\nOrder# NC-12\nBilling Information\nDate: 2026-09-01\nTax: 2.00\nOrder total 42.00"
-    )
-
-
-def test_browser_upload_displays_non_invoice_error():
-    response = TestClient(app).post(
-        "/upload",
-        files={"file": ("notes.txt", b"Quarterly meeting notes and action items", "text/plain")},
-    )
-    assert response.status_code == 422
-    assert 'id="upload-error"' in response.text
-    assert "does not appear to be a valid invoice" in response.text
 
 
 def test_local_parser_detects_invoice_currency():

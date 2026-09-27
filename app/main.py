@@ -22,7 +22,6 @@ from .services import (
     generate_monthly_gst_csv,
     generate_purchase_recommendations,
     save_upload,
-    validate_invoice_document,
 )
 
 
@@ -128,7 +127,6 @@ async def upload_page(request: Request, file: UploadFile = File(...), db: Sessio
     try:
         path = await save_upload(file)
         text = extract_text(path)
-        validate_invoice_document(text)
         invoice = store_invoice(db, extract_invoice(text), file.filename or path.name, text)
     except HTTPException as exc:
         if path is not None:
@@ -197,7 +195,6 @@ async def upload_api(file: UploadFile = File(...), db: Session = Depends(get_db)
     path = await save_upload(file)
     try:
         text = extract_text(path)
-        validate_invoice_document(text)
         return store_invoice(db, extract_invoice(text), file.filename or path.name, text)
     except Exception:
         path.unlink(missing_ok=True)
